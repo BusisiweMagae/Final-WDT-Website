@@ -1,0 +1,273 @@
+<html>
+<head>
+
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <script src="js/bootstrap.js"></script>
+
+    <title>Cost of living and goods prices for countries Capitals</title>
+    <style>
+        .list-group-item.mt-2.selected {
+            border: blue 3px solid;
+        }
+
+        #countries {
+            max-height: 100vh;
+            overflow: scroll;
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body>
+<div class="nav-bar">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Navbar</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="./index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" aria-current="page" href="./about.html">About</a>
+                    </li>
+
+                </ul>
+
+            </div>
+        </div>
+    </nav>
+</div>
+
+<div class="container-fluid" id="hero-sec">
+    <div>
+        <div class="row d-flex">
+
+            <div class="col-lg-4 col-sm-12 ">
+                <h2 class="text-center">List of Countries</h2>
+                <input type="search" name="search" id="serach" class="form-control block" placeholder="Search ...">
+                <div class="list-group mt-2" id="countries" role="tablist">
+                </div>
+            </div>
+            <div class="col-lg-8 col-sm-12">
+                <h2 class="text-center">Cost of living and goods prices</h2>
+                <div class="card">
+                    <div class="px-2 py-2 align-middle">
+                        <div id="googleMap" class="mb-2" style="width:100%;height:400px;"></div>
+                        <div>
+                            <canvas id="myChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- main container -->
+    <div class="main-container">
+        <div class="container-fluid">
+
+        </div>
+    </div>
+
+
+</div>
+</body>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDqiW9Rt_CiFegua5c3Z-uxA8i6tXwLPOM"></script>
+
+<script type="text/javascript">
+
+    const apiToken = "d12f48c6b6mshde2728d8ca30a6dp10bb46jsn81c4519aea59";
+
+    const countriesList = $('#countries');
+    const ctx = document.getElementById('myChart');
+    let chart = new Chart(ctx, {
+        type: 'bar',
+        options: {
+            responsive: true,
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    ticks: {
+                        type: 'logarithmic',
+                        sampleSize:100,
+                        fontSize: 30,
+                        autoSkip: false,
+                        callback: function (value, index, ticks) {
+                            if (value > 1000){
+                            return '$' + Chart.Ticks.formatters.numeric.apply(this, [value /1000, index, ticks]) + 'k';
+
+                            }
+                            return '$' + Chart.Ticks.formatters.numeric.apply(this, [value , index, ticks]);
+                        }
+                    }
+                },
+                y:{
+                    ticks:{
+                        // autoSkip: false,
+                        padding:5
+                    }
+                }
+            },
+            tooltips: {
+                enabled: true,
+                mode: 'nearest'
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        color: 'rgb(255, 99, 132)'
+                    }
+                }
+            }
+        }
+    });
+
+    function pricesChart(values, labels) {
+
+        const data = {
+            labels: labels,
+            datasets: [{
+                axis: 'x',
+                label: 'Cost of living and goods prices',
+                data: values,
+                fill: false,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(255, 159, 64, 0.2)',
+                    'rgba(255, 205, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(201, 203, 207, 0.2)'
+                ],
+                borderColor: [
+                    'rgb(255, 99, 132)',
+                    'rgb(255, 159, 64)',
+                    'rgb(255, 205, 86)',
+                    'rgb(75, 192, 192)',
+                    'rgb(54, 162, 235)',
+                    'rgb(153, 102, 255)',
+                    'rgb(201, 203, 207)'
+                ],
+                borderWidth: 1
+            }]
+        };
+
+        chart.data = data;
+        chart.update();
+    }
+
+
+    function map(lat, lng) {
+        var mapProp = {
+            center: new google.maps.LatLng(lat, lng),
+            zoom: 6,
+        };
+        var map = new google.maps.Map(document.getElementById("googleMap"), mapProp);
+    }
+
+    function getCostOfliving(country, city, lat, lng) {
+
+        map(lat, lng);
+
+        const settings = {
+            "async": true,
+            "crossDomain": true,
+            "url": `https://cost-of-living-and-prices.p.rapidapi.com/prices?city_name=${city}&country_name=${country}`,
+            "method": "GET",
+            "headers": {
+                "X-RapidAPI-Key": apiToken,
+                "X-RapidAPI-Host": "cost-of-living-and-prices.p.rapidapi.com"
+            }
+        };
+
+        $.ajax(settings).done(function (response) {
+            let prices = response.prices;
+            const labels = prices.map(i => i.item_name.toString());
+            let data = prices.map(i => i.usd ? i.usd.avg : 0).flat();
+            pricesChart(data, labels);
+
+        });
+    }
+
+    function getCountries() {
+        const settings = {
+            "async": true,
+            "crossDomain": true,
+            "url": "https://country-facts.p.rapidapi.com/all",
+            "method": "GET",
+            "headers": {
+                "X-RapidAPI-Key": apiToken,
+                "X-RapidAPI-Host": "country-facts.p.rapidapi.com"
+            }
+        };
+
+        $.ajax(settings).done(function (response) {
+            response.forEach(function (item, index) {
+
+
+                let data = {
+                    country: item.name.common,
+                    latlng: item.latlng,
+                    city: item.capital[0]
+                }
+
+                let listItem = `<div class="list-group-item list-group-item-action mt-2" data-bs-toggle="list" role="tab"  onclick='getCostOfliving("${item.name.common}","${item.capital[0]}",${item.latlng})'>
+                        <div class="list-group-item-heading">
+                            <img class="small" width="30" height="30"
+                                 src="${item.flag}">
+                                <b>${item.name.common}</b>
+                        </div>
+                        <p class="list-group-item-text" data-description="  Capital of ${item.name.common} is ${item.capital[0]} and population around ${item.population}">
+                            Capital of ${item.name.common} is <b>${item.capital[0]}</b> and population around <b>${item.population}</b>
+                        </p>
+                    </div>`;
+
+                countriesList.append(listItem);
+            });
+        });
+    }
+
+
+    $(document).ready(function () {
+        getCountries();
+
+        $("#serach").on('keyup', function() {
+            var search = $(this).val().toLowerCase();
+            //Go through each list item and hide if not match search
+
+            $("#countries .list-group-item").each(function() {
+                if ($(this).html().toLowerCase().indexOf(search) != -1) {
+                    $(this).show();
+                }
+                else {
+                    $(this).hide();
+                }
+
+            });
+            $("#countries .list-group-item:visible").each(function(index) {
+                if(index == 0){
+                    $(this).css("border-top-left-radius", "10px");
+                    $(this).css("border-top-right-radius", "10px");
+                }
+                if(index == $(".list-group-item:visible").length - 1){
+                    $(this).css("border-bottom-left-radius", "10px");
+                    $(this).css("border-bottom-right-radius", "10px");
+                }
+            });
+
+        });
+
+    });
+</script>
+
+
+</html>
